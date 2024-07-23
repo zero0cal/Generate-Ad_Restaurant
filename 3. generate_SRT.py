@@ -64,8 +64,6 @@ def create_srt(transcription_response):
                 end_time = word_info.end_time.total_seconds()
                 word = word_info.word.replace('▁', ' ')  # ▁ 문자를 공백으로 대체
 
-                print(word)
-
                 words_with_timestamps.append([start_time, end_time, word])
 
 
@@ -94,7 +92,7 @@ def create_srt(transcription_response):
             else:new_word = "".join([new_word, words_with_timestamps[j][2]])
 
             j+=1
-            print("New:: ", new_word, '\n')
+
 
         if(j<len(words_with_timestamps)): end_time = words_with_timestamps[j][1]
         else: end_time = words_with_timestamps[j-1][1]
@@ -123,7 +121,7 @@ def create_srt(transcription_response):
                 j += 1
             else:
                 break
-        print("line: ", words)
+
         srt_content.append(f"{index}\n{format_time(start_time)} --> {format_time(end_time)}\n{words}\n")
         index += 1
         i = j
@@ -209,8 +207,6 @@ def main():
 
     for i, restaurant_name in enumerate(restaurant_names):
         
-        if i==2:
-            break
         try:
             audio_file_path = f'{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.mp3'
             audio_content = read_audio_from_gcs(bucket_name, audio_file_path)
