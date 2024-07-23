@@ -1,7 +1,6 @@
 from google.cloud import speech
 from google.cloud import storage
-
-import io
+import difflib
 
 storage_client = storage.Client.from_service_account_json("/Users/zero/STUDY/UGRP/Google Cloud/firebase/serviceAccountKey.json")
 bucket_name = 'ugrp-server-73535.appspot.com'
@@ -134,6 +133,60 @@ def create_srt(transcription_response):
 
     return "\n".join(srt_content)
 
+def read_text_from_gcs(bucket_name, blob_name):
+    """Google Cloud Storage에서 정답 텍스트 파일 내용 읽기"""
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    text_content = blob.download_as_text(encoding='utf-8')
+    return text_content
+
+# 문장을 음절 단위로 나누기.
+def split_to_syllables(text):
+    return list(text)
+
+def correct_line_syllables(line, correct_syllables, offset):
+    words = line.split()
+    corrected_line = []
+    
+    for word in words:
+        word_cleaned = word.replace(" ", "")
+        word_syllables = split_to_syllables(word_cleaned)
+        corrected_syllables = []
+
+        for idx, syllable in enumerate(word_syllables):
+            #index가 가까운 음절과 우선적으로 유사도 판별
+            rel_idx = min(idx + offset, len(correct_syllables) - 1)
+            rel_syllable = correct_syllables[rel_idx]
+            matches = difflib.get_close_matches(syllable, [rel_syllable], n=1, cutoff=0.5)
+            if matches:
+                corrected_syllables.append(matches[0])
+            else:
+                #음절이 비슷한 경우가 없을 때, 정답본의 음절로 대치
+                """ Expected Error Case: Numeric Value일 경우, 발음과 정답본의 차이가 극심 ---> elevenlabs와 speech2text model의 진척 상황을 보고 판별"""
+                corrected_syllables.append(rel_syllable)
+
+        corrected_word = ''.join(corrected_syllables)
+        corrected_line.append(corrected_word)
+        offset += len(word_syllables)
+
+    return ' '.join(corrected_line), offset
+
+#correct_srt_file에 들어갈 byte 반환
+def correct_srt_file(srt_content, correct_syllables):
+    corrected_srt_lines = []
+    offset = 0  #offset 기반으로 정답본과 SRT 파일의 index 파악
+
+    for line in srt_content.split('\n'):
+        if '-->' in line or line.isdigit() or line.strip() == '':
+            corrected_srt_lines.append(line)
+        else:
+            # 음절 기반으로 수정된 문장과 offset을 update 
+            corrected_line, offset = correct_line_syllables(line, correct_syllables, offset)
+            corrected_srt_lines.append(corrected_line)
+
+    return '\n'.join(corrected_srt_lines)
+
+
 def save_srt_to_gcs(srt_content, bucket_name, srt_blob_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(srt_blob_name)
@@ -165,8 +218,16 @@ def main():
         
             srt_file_path = f'{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.srt'
             srt_content = create_srt(response)
+
+            #srt_content 후처리
+            text_file_path = f"{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.txt"
+            correct_sentence = read_text_from_gcs(bucket_name, text_file_path)
+
+            correct_sentence_cleaned = correct_sentence.replace(" ","").replace(",","").replace("!", "").replace(".", "")
+            correct_syllables = split_to_syllables(correct_sentence_cleaned)
+            corrected_srt_content = correct_srt_file(srt_content, correct_syllables)
         
-            save_srt_to_gcs(srt_content, bucket_name, srt_file_path)
+            save_srt_to_gcs(corrected_srt_content, bucket_name, srt_file_path)
 
             success.append(restaurant_name)
 
