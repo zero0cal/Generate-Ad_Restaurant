@@ -36,18 +36,19 @@ def download_video_file(bucket_name, folder_path, local_download_path, restauran
 
 
 #restaurant 리스트 받아오기(mp3 생성한 순)
-restaurant_names = get_restaurant_names_from_txt("/Users/zero/STUDY/UGRP/Google Cloud/elevenLabs_Restaurant.txt")
+restaurant_names = get_restaurant_names_from_txt("/Users/zero/STUDY/UGRP/Google Cloud/restaurant_List.txt")
 
 def main():
     #GCS 기본 경로 지정
     base_path = 'Restaurant Photo DB/경상북도/대구/달성군'
     
-    restaurant_names = get_restaurant_names_from_txt("/Users/zero/STUDY/UGRP/Google Cloud/elevenLabs_Restaurant.txt")
+    restaurant_names = get_restaurant_names_from_txt("/Users/zero/STUDY/UGRP/Google Cloud/restaurant_List.txt")
     
     for i, restaurant_name in enumerate(restaurant_names):
 
-        if i == 2:
-            break
+        """유지 보수"""
+        #if i==1: break
+        #restaurant_name = "콩지가좋아하는파스타"
 
 
         narration_files = [f"{restaurant_name}_promo_reel.mp3", f"{restaurant_name}_promo_reel.srt"]
@@ -66,15 +67,17 @@ def main():
             download_blob(bucket_name, narration_gcs_path, local_path)
 
 
+
         #비디오 다운로드 로직
         video_base_path = "Restaurant LUMA Video DB/경상북도/대구/달성군"
-        video_gcs_path = f"{video_base_path}/{restaurant_name}/2024-07-23"
+        video_gcs_path = f"{video_base_path}/{restaurant_name}/2024-07-25"
         video_folder = [f"{video_gcs_path}/음식/", f"{video_gcs_path}/외관/"]
         local_video_path = f"/Users/zero/STUDY/UGRP/gummy_Video/Restaurant/{restaurant_name}/Video"
         
         num_video=1
         for video_folder_path in (video_folder):
             num_video = download_video_file(bucket_name, video_folder_path, local_video_path, restaurant_name, num_video)
+
             
 if __name__ == '__main__':
     main()

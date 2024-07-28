@@ -36,9 +36,9 @@ function copyClips(sourceSequence, targetSequence) {
 }
 
 // 전환 효과
-function applytransition() {
+function applytransition(sequence_index) {
     var transformEffect = qe.project.getVideoEffectByName("방향 흐림");
-    var transition_target = qe.project.getSequenceAt(1);
+    var transition_target = qe.project.getSequenceAt(sequence_index+1);
 
     for (var i = 1; i <= 5; i += 2) {
         var targetQEClip = transition_target.getVideoTrackAt(1).getItemAt(i);
@@ -79,6 +79,11 @@ function clear(sequence) {
     for (var j = track.clips.numItems - 1; j >= 5; j--) {
         track.clips[j].remove(0, 1);
     }
+
+    var audio_track = sequence.audioTracks[0];
+    for (var j = audio_track.clips.numItems-1; j>0;j--){
+        audio_track.clips[j].remove(0,1)
+    }
 }
 
 // 파일을 가져와서 프로젝트에 추가하는 함수
@@ -106,14 +111,20 @@ function importFile(filepath) {
 }
 
 // 타임라인에 클립을 추가하는 함수
-function addClipToTimeline(clip, trackIndex, time, isAudio) {
+function addClipToTimeline(clip, trackIndex, time, isAudio, startTime, endTime) {
     var sequence = project.activeSequence;
     if (!sequence) throw new Error("Active sequence is not available.");
 
     if (isAudio) {
         var audioTrack = sequence.audioTracks[trackIndex];
         if (!audioTrack) throw new Error("Audio track " + trackIndex + " not found.");
-        audioTrack.insertClip(clip, time);
+        var newClip = audioTrack.insertClip(clip, time);
+        
+        var presentClip = audioTrack.clips[0]
+        if(startTime !== undefined && endTime != undefined){
+            presentClip.inPoint = startTime;
+            presentClip.outPoint = endTime;
+        }
     } else {
         var videoTrack = sequence.videoTracks[trackIndex];
         if (!videoTrack) throw new Error("Video track " + trackIndex + " not found.");
@@ -212,7 +223,7 @@ function generateAd(restaurant_name, index) {
 
     var mogrt = "/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Font/gummy_font_주아_mid.mogrt";
     var gummyGraphic = "/Users/zero/STUDY/UGRP/gummy_Video/Common_File/WaterMark/Gummy_Graphic.mp4";
-    var musicFile = ["/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Music/0719_music.mp3",
+    var musicFile_list = ["/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Music/0719_music.mp3",
                     "/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Music/0720_music.mp3",
                     "/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Music/0721_music.mp3",
                     "/Users/zero/STUDY/UGRP/gummy_Video/Common_File/Music/0722_music.mp3",
@@ -224,6 +235,14 @@ function generateAd(restaurant_name, index) {
         var originalSequenceName = "조정레이어";
         var newSequenceName = restaurant_name + " Sequence";
         var sequencePresetPath = "/Users/zero/Documents/Adobe/Premiere Pro/24.0/Profile-zero/Settings/GummyDefined/gummy_shorts.sqpreset";
+        
+        //musicFile 선택 및 구간 조정
+        if(index%10 == 0){
+            music_marker = 0;
+        }else{
+            music_marker += 1;
+        }
+        var musicFile = musicFile_list[(index/10) | 0];
 
         var originalSequence = getSequenceByName(originalSequenceName);
         if (!originalSequence) throw new Error("Original sequence not found.");
@@ -232,7 +251,7 @@ function generateAd(restaurant_name, index) {
         if (!duplicatedSequence) throw new Error("Failed to create duplicated sequence.");
 
         copyClips(originalSequence, duplicatedSequence);
-        applytransition();
+        applytransition(index);
 
         var sequence = project.activeSequence;
         if (!sequence) throw new Error("No active sequence found.");
@@ -251,7 +270,11 @@ function generateAd(restaurant_name, index) {
         addClipToTimeline(videoClip_4, 0, 12, false);
         addClipToTimeline(gummyClip, 0, 16, false);
 
-        addClipToTimeline(audioClip, 0, 0, true);
+
+        //musicFile import 
+        //offset이 구간 설정
+        music_offset = 18.0; 
+        addClipToTimeline(audioClip, 0, 0, true, 18.0*music_marker, 18.0*music_marker+music_offset);
         addClipToTimeline(narrationClip, 1, 0, true);
 
         //클립의 스케일 조정
@@ -261,10 +284,25 @@ function generateAd(restaurant_name, index) {
         adjustClipProperties(sequence.videoTracks[0].clips[3], 165);
 
         var audioTrack = sequence.audioTracks[0];
-        var firstClip = audioTrack.clips[0];
+        var audioTrack_2 = sequence.audioTracks[1];
+
+        var audio_firstClip = audioTrack.clips[0];
+        var audio_secondClip = audioTrack_2.clips[0];
+
+        var video_gummyClip = sequence.videoTracks[0].clips[4]
+
         var newOutPoint = 18.0;
-        trimClip(firstClip, newOutPoint);
-        adjustClipVolume(firstClip, 0.01158);
+        var narration_endPoint = audio_secondClip.end.seconds;
+
+        //narration 너무 길 경우(outlier), 그래픽 조정
+        if(narration_endPoint > newOutPoint){
+            newOutPoint = narration_endPoint;
+        }
+        
+        trimClip(audio_firstClip, newOutPoint);
+        trimClip(video_gummyClip, newOutPoint);
+
+        adjustClipVolume(audio_firstClip, 0.01100);
 
         clear(sequence);
         applySubtitle(srt, File(mogrt));

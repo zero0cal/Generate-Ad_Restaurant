@@ -28,6 +28,13 @@ def get_restaurant_names_from_gcs(bucket_name, prefix):
     # 경로에서 식당 이름만 추출
     return [name.split('/')[-2] for name in restaurant_names if name.endswith('/') and name != prefix]
 
+
+def get_restaurant_names_from_txt(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        restaurant_names = file.read().splitlines()
+    
+    return restaurant_names
+
 def read_text_from_gcs(bucket_name, blob_name):
     """Google Cloud Storage에서 텍스트 파일 내용 읽기"""
     bucket = storage_client.bucket(bucket_name)
@@ -45,13 +52,13 @@ def upload_audio_to_gcs(bucket_name, destination_blob_name, audio_content):
 def text_to_speech_file(text: str, restaurant_name) -> bytes:
     """텍스트를 음성으로 변환하여 바이트 배열로 반환"""
     response = client.text_to_speech.convert(
-        voice_id='d8C3IjQocptPVwhAEhxm',  # IU REAL
+        voice_id='d8C3IjQocptPVwhAEhxm',  #UI REAL
         optimize_streaming_latency="0",
         output_format="mp3_22050_32",
         text=text,
         model_id="eleven_multilingual_v2",
         voice_settings=VoiceSettings(
-            stability=0.25,
+            stability=0.30,
             similarity_boost=0.8,
             style=0.55,
             use_speaker_boost=True,
@@ -83,9 +90,13 @@ def process_restaurant(restaurant_name):
     print(f"MP3 파일이 성공적으로 저장되었습니다: {gcs_mp3_file_path}")
 
 def main():
-    base_path = 'Restaurant Photo DB/경상북도/대구/달성군/'
-    restaurant_names = get_restaurant_names_from_gcs(bucket_name, base_path)
+
+
+    """Google GCS 모든 디렉터리 접근"""
+    #restaurant_names = get_restaurant_names_from_gcs(bucket_name, base_path)
     
+    restaurant_names_path = "/Users/zero/STUDY/UGRP/Google Cloud/restaurant_List.txt"
+    restaurant_names = get_restaurant_names_from_txt(restaurant_names_path)
     text_restaurant=[]
     for i, restaurant_name in enumerate(restaurant_names):
         text_restaurant.append(restaurant_name)

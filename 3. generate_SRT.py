@@ -5,6 +5,7 @@ import difflib
 storage_client = storage.Client.from_service_account_json("/Users/zero/STUDY/UGRP/Google Cloud/firebase/serviceAccountKey.json")
 bucket_name = 'ugrp-server-73535.appspot.com'
 
+
 def get_restaurant_names_from_txt(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         restaurant_names = file.read().splitlines()
@@ -192,7 +193,7 @@ def save_srt_to_gcs(srt_content, bucket_name, srt_blob_name):
     print(f"SRT file uploaded to GCS at: gs://{bucket_name}/{srt_blob_name}")
 
 # 경로 설정
-restaurant_names_path = "/Users/zero/STUDY/UGRP/Google Cloud/elevenLabs_Restaurant.txt"
+restaurant_names_path = "/Users/zero/STUDY/UGRP/Google Cloud/restaurant_List.txt"
 
 # 변환 및 SRT 파일 생성
 restaurant_names = get_restaurant_names_from_txt(restaurant_names_path)
@@ -201,11 +202,16 @@ restaurant_names = get_restaurant_names_from_txt(restaurant_names_path)
 def main():
     # 경로 설정
     base_path = 'Restaurant Photo DB/경상북도/대구/달성군'
-    restaurant_names_path = "/Users/zero/STUDY/UGRP/Google Cloud/elevenLabs_Restaurant.txt"
+    restaurant_names_path = "/Users/zero/STUDY/UGRP/Google Cloud/restaurant_List.txt"
     restaurant_names = get_restaurant_names_from_txt(restaurant_names_path)
     success = []
 
     for i, restaurant_name in enumerate(restaurant_names):
+        
+        """유지 보수
+        #if i==1: break
+        #restaurant_name = "콩지가좋아하는파스타" """
+
         
         try:
             audio_file_path = f'{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.mp3'
@@ -214,12 +220,14 @@ def main():
         
             srt_file_path = f'{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.srt'
             srt_content = create_srt(response)
+            print("srt:: ", srt_content)
 
             #srt_content 후처리
             text_file_path = f"{base_path}/{restaurant_name}/narration/{restaurant_name}_promo_reel.txt"
             correct_sentence = read_text_from_gcs(bucket_name, text_file_path)
 
-            correct_sentence_cleaned = correct_sentence.replace(" ","").replace(",","").replace("!", "").replace(".", "")
+            correct_sentence_cleaned = correct_sentence.replace(" ","").replace(",","").replace("!", "").replace(".", "").replace("\"", "")
+            print(correct_sentence_cleaned)
             correct_syllables = split_to_syllables(correct_sentence_cleaned)
             corrected_srt_content = correct_srt_file(srt_content, correct_syllables)
         
