@@ -129,8 +129,8 @@ function addClipToTimeline(clip, trackIndex, time, isAudio, startTime, endTime) 
 
     if (startTime !== undefined && endTime !== undefined) {
         var music_track_clip = sequence.audioTracks[trackIndex].clips[0];
-        music_track_clip.inPoint.seconds = startTime;
-        music_track_clip.outPoint.seconds = endTime;
+        music_track_clip.inPoint = startTime;
+        music_track_clip.outPoint = endTime;
     }
 }
 // 특정 클립에 효과를 추가하고 비율을 조정하는 함수
@@ -202,6 +202,8 @@ function applySubtitle(srtFile, mogrtFile) {
         
         sequence.importMGT(mogrtFile.fsName, subtitle.start, 2, 2);
         var mgt = sequence.videoTracks[2].clips[i];
+        
+        alert(subtitle.start)
         mgt.end = subtitle.end;
 
         var property = mgt.getMGTComponent().properties;

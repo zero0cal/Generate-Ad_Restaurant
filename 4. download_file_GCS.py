@@ -70,7 +70,7 @@ def main():
 
         #비디오 다운로드 로직
         video_base_path = "Restaurant LUMA Video DB/경상북도/대구/달성군"
-        video_gcs_path = f"{video_base_path}/{restaurant_name}/2024-07-25"
+        video_gcs_path = f"{video_base_path}/{restaurant_name}/2024-07-29"
         video_folder = [f"{video_gcs_path}/음식/", f"{video_gcs_path}/외관/"]
         local_video_path = f"/Users/zero/STUDY/UGRP/gummy_Video/Restaurant/{restaurant_name}/Video"
         
