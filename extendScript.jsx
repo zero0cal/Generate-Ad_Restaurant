@@ -115,23 +115,24 @@ function addClipToTimeline(clip, trackIndex, time, isAudio, startTime, endTime) 
     var sequence = project.activeSequence;
     if (!sequence) throw new Error("Active sequence is not available.");
 
+    var newClip;
     if (isAudio) {
         var audioTrack = sequence.audioTracks[trackIndex];
         if (!audioTrack) throw new Error("Audio track " + trackIndex + " not found.");
-        var newClip = audioTrack.insertClip(clip, time);
-        
-        var presentClip = audioTrack.clips[0]
-        if(startTime !== undefined && endTime != undefined){
-            presentClip.inPoint = startTime;
-            presentClip.outPoint = endTime;
-        }
+        newClip = audioTrack.insertClip(clip, time);
     } else {
         var videoTrack = sequence.videoTracks[trackIndex];
         if (!videoTrack) throw new Error("Video track " + trackIndex + " not found.");
-        videoTrack.insertClip(clip, time);
+        newClip = videoTrack.insertClip(clip, time);
+    }
+    
+
+    if (startTime !== undefined && endTime !== undefined) {
+        var music_track_clip = sequence.audioTracks[trackIndex].clips[0];
+        music_track_clip.inPoint.seconds = startTime;
+        music_track_clip.outPoint.seconds = endTime;
     }
 }
-
 // 특정 클립에 효과를 추가하고 비율을 조정하는 함수
 function adjustClipProperties(clip, scale, position) {
     var components = clip.components;
