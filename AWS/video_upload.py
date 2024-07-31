@@ -25,7 +25,7 @@ def create_folder(bucket_name, folder_name):
     except NoCredentialsError:
         print("Credentials not available")
     except EndpointConnectionError as e:
-        print(f"Could not connect to the endpoint URL: {e}")ㅇㄹ
+        print(f"Could not connect to the endpoint URL: {e}")
     except ClientError as e:
         print(f"Client error: {e}")
 
@@ -44,7 +44,11 @@ def upload_file_to_s3(local_file, bucket_name, s3_file):
         print(f"Client error: {e}")
 
 def process_directory(base_directory, bucket_name):
-    for restaurant_name in os.listdir(base_directory):
+    for i, restaurant_name in enumerate(os.listdir(base_directory)):
+
+        #if i==1: break
+        #restaurant_name = "쏘핫마라탕마라샹궈 현풍테크노점"
+        
         restaurant_path = os.path.join(base_directory, restaurant_name)
         if os.path.isdir(restaurant_path):  # 해당 경로가 디렉토리인지 확인
             folder_name = f'대구광역시/달성군/{restaurant_name}'
